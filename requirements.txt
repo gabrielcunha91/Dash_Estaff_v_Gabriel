@@ -1,0 +1,12 @@
+# Testado com Python 3.13; use um venv com python -m venv .venv && pip install -r requirements.txt
+numpy==2.2.4
+pandas==2.2.3
+streamlit==1.56.0
+mysql-connector-python==9.2.0
+requests==2.32.3
+PyJWT==2.10.1
+streamlit-aggrid==1.2.1.post2
+workalendar==17.0.0
+openpyxl==3.1.5
+streamlit-echarts==0.4.0
+matplotlib==3.10.1
