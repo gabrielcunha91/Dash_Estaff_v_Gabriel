@@ -22,11 +22,20 @@ def function_merge_financial_income_blueme(general_revenue_df, financial_income_
     numeric_columns = [
         'Num. Jobs B2B', 'Valor Bruto B2B', 'Taxa B2B', 'Total Oportunidade',
         'Total Extra', 'Valor Freela', 'Num. Eventos', 'Valor Transac. Eventos',
-        'Taxa Eventos', 'Taxa Brigada Fixa', 'Taxa Saas', 'Juros/Multas', 'Rendimentos Financeiros'
+        'Taxa Eventos', 'Taxa Brigada Fixa', 'Taxa Saas', 'Juros/Multas',
+        'Rendimentos Financeiros', 'TAXA_CALCULADA', 'BRUTO_CALCULADO'
     ]
     for col in numeric_columns:
         if col in df.columns:
             df[col] = df[col].fillna(0)
+
+    if 'TAXA_CALCULADA' in df.columns:
+        df['Taxa B2B'] = df['Taxa B2B'] + df['TAXA_CALCULADA']
+        df = df.drop(columns=['TAXA_CALCULADA'])
+
+    if 'BRUTO_CALCULADO' in df.columns:
+        df['Valor Bruto B2B'] = df['Valor Bruto B2B'] + df['BRUTO_CALCULADO']
+        df = df.drop(columns=['BRUTO_CALCULADO'])
 
     df['Faturamento Total'] = (
         df.get('Taxa B2B', 0)
