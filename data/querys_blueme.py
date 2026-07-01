@@ -10,7 +10,7 @@ SELECT
     
     SUM(CASE WHEN G1.ID IN ('216') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C1 Impostos',
     SUM(CASE WHEN G1.ID IN ('220','221','222','225','232', '218', '226') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C2 Custos de Ocupação',
-    SUM(CASE WHEN G1.ID IN ('223','231') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C3 Despesas com Pessoal Interno',
+    SUM(CASE WHEN G1.ID IN ('223','231','253') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C3 Despesas com Pessoal Interno',
     SUM(CASE WHEN G1.ID IN ('230', '210') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C4 Despesas com Pessoal Terceirizado',
     SUM(CASE WHEN G1.ID IN ('234', '215') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C5 Despesas Operacionais com Freelas',
     SUM(CASE WHEN G1.ID IN ('233') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C6 Despesas com Clientes',
@@ -37,7 +37,7 @@ SELECT
     CASE 
         WHEN G1.ID IN ('216') THEN 'c1_Impostos'
         WHEN G1.ID IN ('220','221','222','225','232', '218', '226') THEN 'c2_Custos_de_Ocupacao'
-        WHEN G1.ID IN ('223','231', '265') THEN 'c3_Despesas_com_Pessoal_Interno'
+        WHEN G1.ID IN ('223','231','253', '265') THEN 'c3_Despesas_com_Pessoal_Interno'
         WHEN G1.ID IN ('230', '210') THEN 'c4_Despesas_com_Pessoal_Terceirizado'
         WHEN G1.ID IN ('234', '215') THEN 'c5_Despesas_Operacionais_com_Freelas'
         WHEN G1.ID IN ('233') THEN 'c6_Despesas_com_Clientes'
@@ -88,7 +88,7 @@ SELECT
     CASE 
         WHEN G1.ID IN ('216') THEN 'c1_Impostos'
         WHEN G1.ID IN ('220','221','222','225','232', '218', '226') THEN 'c2_Custos_de_Ocupacao'
-        WHEN G1.ID IN ('223','231') THEN 'c3_Despesas_com_Pessoal_Interno'
+        WHEN G1.ID IN ('223','231','253') THEN 'c3_Despesas_com_Pessoal_Interno'
         WHEN G1.ID IN ('230', '210') THEN 'c4_Despesas_com_Pessoal_Terceirizado'
         WHEN G1.ID IN ('234', '215') THEN 'c5_Despesas_Operacionais_com_Freelas'
         WHEN G1.ID IN ('233') THEN 'c6_Despesas_com_Clientes'
