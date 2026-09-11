@@ -6,3 +6,6 @@
 
 # Except for the config.toml file
 !.streamlit/config.toml
+# Bytecode Python (nunca versionar)
+__pycache__/
+*.py[cod]
