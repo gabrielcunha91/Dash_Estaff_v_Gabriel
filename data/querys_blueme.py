@@ -132,17 +132,33 @@ AND DR.COMPETENCIA LIKE '{data}%'
 ORDER BY Total_Custos.Total_Valor DESC, DR.VALOR_PAGAMENTO DESC;
 """, use_blueme=True)
 
+# Receitas lançadas em Receitas Extraordinárias na BlueMe (T_RECEITAS_EXTRAORDINARIAS) que
+# entram no faturamento da Estaff. Linha do faturamento -> (FK_EMPRESA, FK_CLASSIFICACAO).
+# O mês é o da competência (DATA_OCORRENCIA). Receita nova sem boleto: criar a classificação
+# na BlueMe e acrescentar uma linha aqui; o merge do faturamento lê as linhas deste dicionário.
+EXTRAORDINARY_REVENUE_MAP = {
+    'Desenvolvimentos SaaS': (134, 154),    # classificação "Desenvolvimento SaaS"
+    'Rendimentos Financeiros': (134, 150),  # classificação "Juros de Aplicações Financeiras"
+}
+
+def _extraordinary_revenue_where(lines):
+    return " OR ".join(
+        f"(TRE.FK_EMPRESA = {EXTRAORDINARY_REVENUE_MAP[l][0]} AND TRE.FK_CLASSIFICACAO = {EXTRAORDINARY_REVENUE_MAP[l][1]})"
+        for l in lines
+    )
+
 @st.cache_data
-def financial_income_monthly(day1, day2):
+def extraordinary_revenue_monthly(day1, day2):
+    columns = ",\n".join(
+        f"SUM(CASE WHEN TRE.FK_EMPRESA = {empresa} AND TRE.FK_CLASSIFICACAO = {classif} THEN TRE.VALOR ELSE 0 END) AS '{line}'"
+        for line, (empresa, classif) in EXTRAORDINARY_REVENUE_MAP.items()
+    )
     return get_dataframe_from_query(f"""
 SELECT
 DATE_FORMAT(TRE.DATA_OCORRENCIA, '%m/%Y') AS 'Mês/Ano',
-SUM(TRE.VALOR) AS 'Rendimentos Financeiros'
+{columns}
 FROM T_RECEITAS_EXTRAORDINARIAS TRE
-INNER JOIN T_EMPRESAS TE ON (TRE.FK_EMPRESA = TE.ID)
-WHERE TE.ID = 134
-AND TRE.FK_CATEGORIA_RECEITA = 109
-AND TRE.FK_CLASSIFICACAO = 150
+WHERE ({_extraordinary_revenue_where(EXTRAORDINARY_REVENUE_MAP)})
 AND DATE(TRE.DATA_OCORRENCIA) >= '{day1}'
 AND DATE(TRE.DATA_OCORRENCIA) <= '{day2}'
 GROUP BY DATE_FORMAT(TRE.DATA_OCORRENCIA, '%m/%Y')
@@ -150,17 +166,21 @@ ORDER BY STR_TO_DATE(CONCAT('01/', DATE_FORMAT(TRE.DATA_OCORRENCIA, '%m/%Y')), '
 """, use_blueme=True)
 
 @st.cache_data
-def financial_income_details(day1, day2):
+def extraordinary_revenue_details(day1, day2, line):
     return get_dataframe_from_query(f"""
 SELECT
+TRE.ID AS 'ID_Receita',
 DATE(TRE.DATA_OCORRENCIA) AS 'Data_Competencia',
+DATE(TRE.DATA_RECEBIMENTO) AS 'Data_Recebimento',
+TREC.NOME AS 'Cliente',
 TRE.OBSERVACOES AS 'Descricao',
+TFP.DESCRICAO AS 'Forma_Pagamento',
+TRE.NUM_DOCUMENTACAO AS 'Documento',
 TRE.VALOR AS 'Valor'
 FROM T_RECEITAS_EXTRAORDINARIAS TRE
-INNER JOIN T_EMPRESAS TE ON (TRE.FK_EMPRESA = TE.ID)
-WHERE TE.ID = 134
-AND TRE.FK_CATEGORIA_RECEITA = 109
-AND TRE.FK_CLASSIFICACAO = 150
+LEFT JOIN T_RECEITAS_EXTRAORDINARIAS_CLIENTE TREC ON (TRE.FK_CLIENTE = TREC.ID)
+LEFT JOIN T_FORMAS_DE_PAGAMENTO TFP ON (TRE.FK_FORMA_PAGAMENTO = TFP.ID)
+WHERE ({_extraordinary_revenue_where([line])})
 AND DATE(TRE.DATA_OCORRENCIA) >= '{day1}'
 AND DATE(TRE.DATA_OCORRENCIA) <= '{day2}'
 ORDER BY TRE.DATA_OCORRENCIA DESC

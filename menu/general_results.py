@@ -9,7 +9,7 @@ from utils.components import *
 from utils.functions import *
 from datetime import date, datetime
 
-def BuildGeneralResults(billingCompanies, worksByFunctions, generalRevenueEvents, generalRevenueBrigada, generalRevenueSaas, generalRevenueJurosMultas, financialIncomeDetails, averageFreelaValueAndHourlyRate):
+def BuildGeneralResults(billingCompanies, worksByFunctions, generalRevenueEvents, generalRevenueBrigada, saasRevenueDetails, generalRevenueJurosMultas, financialIncomeDetails, averageFreelaValueAndHourlyRate):
 
     row1 = st.columns(6)
     global day_GeneralResults1, day_GeneralResults2
@@ -98,10 +98,10 @@ def BuildGeneralResults(billingCompanies, worksByFunctions, generalRevenueEvents
         function_copy_dataframe_as_tsv(filtered_copy)
         #function_box_lenDf(len_df=count, df=filtered_copy, y='-100', x='500', box_id='box1', item='Propostas')
 
-    with st.expander("📊 Abertura por Saas", expanded=False):
-        generalRevenueSaas = general_revenue_saas(day_GeneralResults1, day_GeneralResults2, filters='')
-        generalRevenueSaas = function_format_numeric_columns(generalRevenueSaas, ['Valor_Original'])
-        filtered_copy, count = component_plotDataframe(generalRevenueSaas, "Abertura por Saas")
+    with st.expander("📊 Abertura por Desenvolvimentos SaaS", expanded=False):
+        saasRevenueDetails = extraordinary_revenue_details(day_GeneralResults1, day_GeneralResults2, 'Desenvolvimentos SaaS')
+        saasRevenueDetails = function_format_numeric_columns(saasRevenueDetails, ['Valor'])
+        filtered_copy, count = component_plotDataframe(saasRevenueDetails, "Abertura por Desenvolvimentos SaaS")
         function_copy_dataframe_as_tsv(filtered_copy)
 
     with st.expander("📊 Abertura por Juros e Multa", expanded=False):
@@ -111,7 +111,7 @@ def BuildGeneralResults(billingCompanies, worksByFunctions, generalRevenueEvents
         function_copy_dataframe_as_tsv(filtered_copy)
 
     with st.expander("📊 Abertura por Rendimentos Financeiros", expanded=False):
-        financialIncomeDetails = financial_income_details(day_GeneralResults1, day_GeneralResults2)
+        financialIncomeDetails = extraordinary_revenue_details(day_GeneralResults1, day_GeneralResults2, 'Rendimentos Financeiros')
         financialIncomeDetails = function_format_numeric_columns(financialIncomeDetails, ['Valor'])
         filtered_copy, count = component_plotDataframe(financialIncomeDetails, "Abertura por Rendimentos Financeiros")
         function_copy_dataframe_as_tsv(filtered_copy)
@@ -126,15 +126,15 @@ class GeneralResults(Page):
         self.data['worksByFunctions'] = works_by_functions(day_GeneralResults1, day_GeneralResults2) 
         self.data['generalRevenueEvents'] = general_revenue_events(day_GeneralResults1, day_GeneralResults2, filters='')
         self.data['generalRevenueBrigada'] = general_revenue_brigada(day_GeneralResults1, day_GeneralResults2, filters='')
-        self.data['generalRevenueSaas'] = general_revenue_saas(day_GeneralResults1, day_GeneralResults2, filters='')
+        self.data['saasRevenueDetails'] = extraordinary_revenue_details(day_GeneralResults1, day_GeneralResults2, 'Desenvolvimentos SaaS')
         self.data['generalRevenueJurosMultas'] = general_revenue_juros_multas(day_GeneralResults1, day_GeneralResults2, filters='')
-        self.data['financialIncomeDetails'] = financial_income_details(day_GeneralResults1, day_GeneralResults2)
+        self.data['financialIncomeDetails'] = extraordinary_revenue_details(day_GeneralResults1, day_GeneralResults2, 'Rendimentos Financeiros')
         self.data['averageFreelaValueAndHourlyRate'] = average_freela_value_and_hourly_rate(day_GeneralResults1, day_GeneralResults2)
         BuildGeneralResults(self.data['billingCompanies'], 
                             self.data['worksByFunctions'],
                             self.data['generalRevenueEvents'],
                             self.data['generalRevenueBrigada'],
-                            self.data['generalRevenueSaas'],
+                            self.data['saasRevenueDetails'],
                             self.data['generalRevenueJurosMultas'],
                             self.data['financialIncomeDetails'],
                             self.data['averageFreelaValueAndHourlyRate'])
