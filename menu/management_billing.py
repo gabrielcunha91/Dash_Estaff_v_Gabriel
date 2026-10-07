@@ -6,7 +6,7 @@ from utils.components import *
 from utils.functions import *
 from datetime import date, datetime
 
-def BuildManegementBilling(generalRevenue, groupsCompanies, generalRevenueOportunity, generalRevenueEvents, generalRevenueBrigada, generalRevenueSaas, generalRevenueJurosMultas, financialIncomeMonthly): #estabelecimentoTransaction
+def BuildManegementBilling(generalRevenue, groupsCompanies, generalRevenueOportunity, generalRevenueEvents, generalRevenueBrigada, generalRevenueJurosMultas, extraordinaryRevenueMonthly): #estabelecimentoTransaction
 
     row1 = st.columns(6)
     global day_ManegementBilling1, day_ManegementBilling2
@@ -21,9 +21,9 @@ def BuildManegementBilling(generalRevenue, groupsCompanies, generalRevenueOportu
 
     with row2[0]:
         generalRevenue = general_revenue(day_ManegementBilling1, day_ManegementBilling2, filters='')
-        financialIncomeMonthly = financial_income_monthly(day_ManegementBilling1, day_ManegementBilling2)
-        generalRevenue = function_merge_financial_income_blueme(generalRevenue, financialIncomeMonthly)
-        generalRevenue = function_format_numeric_columns(generalRevenue, ['Valor Bruto B2B', 'Taxa B2B', 'Total Oportunidade', 'Total Extra', 'Valor Freela','Valor Transac. Eventos', 'Taxa Eventos', 'Taxa Brigada Fixa', 'Taxa Saas', 'Juros/Multas', 'Rendimentos Financeiros', 'Faturamento Total'])
+        extraordinaryRevenueMonthly = extraordinary_revenue_monthly(day_ManegementBilling1, day_ManegementBilling2)
+        generalRevenue = function_merge_extraordinary_revenue_blueme(generalRevenue, extraordinaryRevenueMonthly)
+        generalRevenue = function_format_numeric_columns(generalRevenue, ['Valor Bruto B2B', 'Taxa B2B', 'Total Oportunidade', 'Total Extra', 'Valor Freela','Valor Transac. Eventos', 'Taxa Eventos', 'Taxa Brigada Fixa', 'Desenvolvimentos SaaS', 'Juros/Multas', 'Rendimentos Financeiros', 'Faturamento Total'])
         generalRevenue = generalRevenue.drop(['Total Oportunidade', 'Total Extra', 'Valor Freela'], axis=1)
         filtered_copy, count = component_plotDataframe(generalRevenue, "Faturamento Estaff Gerencial")
         function_copy_dataframe_as_tsv(filtered_copy)
@@ -70,9 +70,9 @@ def BuildManegementBilling(generalRevenue, groupsCompanies, generalRevenueOportu
                 filters += f" AND TC.NAME IN ({select_companies_str})"
         
         generalRevenue = general_revenue(day_ManegementBilling1, day_ManegementBilling2, filters)
-        financialIncomeMonthly = financial_income_monthly(day_ManegementBilling1, day_ManegementBilling2)
-        generalRevenue = function_merge_financial_income_blueme(generalRevenue, financialIncomeMonthly)
-        generalRevenue = function_format_numeric_columns(generalRevenue, ['Valor Bruto B2B', 'Taxa B2B', 'Total Oportunidade', 'Total Extra', 'Valor Freela','Valor Transac. Eventos', 'Taxa Eventos', 'Taxa Brigada Fixa', 'Taxa Saas', 'Juros/Multas', 'Rendimentos Financeiros', 'Faturamento Total'])
+        # Desenvolvimentos SaaS e Rendimentos Financeiros (BlueMe) não pertencem a grupo/casa: ficam fora da visão filtrada
+        generalRevenue = function_merge_extraordinary_revenue_blueme(generalRevenue)
+        generalRevenue = function_format_numeric_columns(generalRevenue, ['Valor Bruto B2B', 'Taxa B2B', 'Total Oportunidade', 'Total Extra', 'Valor Freela','Valor Transac. Eventos', 'Taxa Eventos', 'Taxa Brigada Fixa', 'Desenvolvimentos SaaS', 'Juros/Multas', 'Rendimentos Financeiros', 'Faturamento Total'])
         filtered_copy, count = component_plotDataframe(generalRevenue, "Faturamento Detalhado")
         function_copy_dataframe_as_tsv(filtered_copy)
 
@@ -95,12 +95,6 @@ def BuildManegementBilling(generalRevenue, groupsCompanies, generalRevenueOportu
             filtered_copy, count = component_plotDataframe(generalRevenueBrigada, "Abertura por Brigada")
             function_copy_dataframe_as_tsv(filtered_copy)
 
-        with st.expander("📊 Abertura por Saas", expanded=False):
-            generalRevenueSaas = general_revenue_saas(day_ManegementBilling1, day_ManegementBilling2, filters)
-            generalRevenueSaas = function_format_numeric_columns(generalRevenueSaas, ['Valor_Original'])
-            filtered_copy, count = component_plotDataframe(generalRevenueSaas, "Abertura por Saas")
-            function_copy_dataframe_as_tsv(filtered_copy)
-
         with st.expander("📊 Abertura por Juros e Multa", expanded=False):
             generalRevenueJurosMultas = general_revenue_juros_multas(day_ManegementBilling1, day_ManegementBilling2, filters)
             generalRevenueJurosMultas = function_format_numeric_columns(generalRevenueJurosMultas, ['Juros_Multa'])
@@ -118,9 +112,8 @@ class ManegementBilling(Page):
         self.data['generalRevenueOportunity'] = general_revenue_oportunity(day_ManegementBilling1, day_ManegementBilling2, filters='')
         self.data['generalRevenueEvents'] = general_revenue_events(day_ManegementBilling1, day_ManegementBilling2, filters='')
         self.data['generalRevenueBrigada'] = general_revenue_brigada(day_ManegementBilling1, day_ManegementBilling2, filters='')
-        self.data['generalRevenueSaas'] = general_revenue_saas(day_ManegementBilling1, day_ManegementBilling2, filters='')
         self.data['generalRevenueJurosMultas'] = general_revenue_juros_multas(day_ManegementBilling1, day_ManegementBilling2, filters='')
-        self.data['financialIncomeMonthly'] = financial_income_monthly(day_ManegementBilling1, day_ManegementBilling2)
+        self.data['extraordinaryRevenueMonthly'] = extraordinary_revenue_monthly(day_ManegementBilling1, day_ManegementBilling2)
 
 
         BuildManegementBilling(self.data['generalRevenue'],
@@ -129,6 +122,5 @@ class ManegementBilling(Page):
                                self.data['generalRevenueOportunity'],
                                self.data['generalRevenueEvents'],
                                self.data['generalRevenueBrigada'],
-                               self.data['generalRevenueSaas'],
                                self.data['generalRevenueJurosMultas'],
-                               self.data['financialIncomeMonthly'])
+                               self.data['extraordinaryRevenueMonthly'])

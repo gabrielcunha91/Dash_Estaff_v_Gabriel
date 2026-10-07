@@ -1,30 +1,28 @@
 import pandas as pd
 import streamlit.components.v1 as components
 import streamlit as st
+from data.querys_blueme import EXTRAORDINARY_REVENUE_MAP
 
 
-def function_merge_financial_income_blueme(general_revenue_df, financial_income_df):
-    """Soma rendimentos financeiros (BlueMe) ao faturamento e recalcula Faturamento Total."""
+def function_merge_extraordinary_revenue_blueme(general_revenue_df, extraordinary_revenue_df=None):
+    """Soma as receitas extraordinárias da BlueMe (linhas de EXTRAORDINARY_REVENUE_MAP) ao
+    faturamento e recalcula Faturamento Total. Sem extraordinary_revenue_df (visão filtrada por
+    grupo/casa, à qual essas receitas não pertencem), as linhas entram zeradas."""
     df = general_revenue_df.copy()
-    rend_df = financial_income_df.copy()
+    lines = list(EXTRAORDINARY_REVENUE_MAP)
 
-    if 'Rendimentos Financeiros' not in rend_df.columns:
-        rend_df['Rendimentos Financeiros'] = 0
-    if 'Mês/Ano' not in rend_df.columns:
-        rend_df['Mês/Ano'] = None
-
-    df = df.merge(
-        rend_df[['Mês/Ano', 'Rendimentos Financeiros']],
-        on='Mês/Ano',
-        how='outer'
-    )
+    if extraordinary_revenue_df is not None and not extraordinary_revenue_df.empty:
+        df = df.merge(extraordinary_revenue_df[['Mês/Ano'] + lines], on='Mês/Ano', how='outer')
+    for line in lines:
+        if line not in df.columns:
+            df[line] = 0
 
     numeric_columns = [
         'Num. Jobs B2B', 'Valor Bruto B2B', 'Taxa B2B', 'Total Oportunidade',
         'Total Extra', 'Valor Freela', 'Num. Eventos', 'Valor Transac. Eventos',
-        'Taxa Eventos', 'Taxa Brigada Fixa', 'Taxa Saas', 'Juros/Multas',
-        'Rendimentos Financeiros', 'TAXA_CALCULADA', 'BRUTO_CALCULADO'
-    ]
+        'Taxa Eventos', 'Taxa Brigada Fixa', 'Juros/Multas',
+        'TAXA_CALCULADA', 'BRUTO_CALCULADO'
+    ] + lines
     for col in numeric_columns:
         if col in df.columns:
             df[col] = df[col].fillna(0)
@@ -41,16 +39,15 @@ def function_merge_financial_income_blueme(general_revenue_df, financial_income_
         df.get('Taxa B2B', 0)
         + df.get('Taxa Eventos', 0)
         + df.get('Taxa Brigada Fixa', 0)
-        + df.get('Taxa Saas', 0)
         + df.get('Juros/Multas', 0)
-        + df.get('Rendimentos Financeiros', 0)
+        + sum(df[line] for line in lines)
     )
 
     cols_order = [
         'Mês/Ano', 'Num. Jobs B2B', 'Valor Bruto B2B', 'Taxa B2B',
         'Total Oportunidade', 'Total Extra', 'Valor Freela', 'Num. Eventos',
         'Valor Transac. Eventos', 'Taxa Eventos', 'Taxa Brigada Fixa',
-        'Taxa Saas', 'Juros/Multas', 'Rendimentos Financeiros', 'Faturamento Total'
+        'Juros/Multas', *lines, 'Faturamento Total'
     ]
     existing_cols_order = [col for col in cols_order if col in df.columns]
     df = df[existing_cols_order]
