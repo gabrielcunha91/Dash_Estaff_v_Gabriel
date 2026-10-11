@@ -2,6 +2,10 @@ from data.dbconnect import get_dataframe_from_query
 import pandas as pd
 import streamlit as st
 
+# Brindes e Confraternizações lançados no nível 1 Eventos (G2 723) são confraternização interna:
+# entram em C3 (Pessoal Interno), não em C5. Os de Marketing (G2 798, nível 1 224) já caem em C8.
+BRINDES_CONFRATERNIZACAO_INTERNA_G2 = 723
+
 @st.cache_data
 def general_costs_blueme(day1, day2):
     return get_dataframe_from_query(f"""
@@ -10,9 +14,9 @@ SELECT
     
     SUM(CASE WHEN G1.ID IN ('216') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C1 Impostos',
     SUM(CASE WHEN G1.ID IN ('220','221','222','225','232', '218', '226') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C2 Custos de Ocupação',
-    SUM(CASE WHEN G1.ID IN ('223','231','253') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C3 Despesas com Pessoal Interno',
+    SUM(CASE WHEN G1.ID IN ('223','231','253') OR DR.FK_CLASSIFICACAO_CONTABIL_GRUPO_2 = {BRINDES_CONFRATERNIZACAO_INTERNA_G2} THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C3 Despesas com Pessoal Interno',
     SUM(CASE WHEN G1.ID IN ('230', '210') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C4 Despesas com Pessoal Terceirizado',
-    SUM(CASE WHEN G1.ID IN ('234', '215') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C5 Despesas Operacionais com Freelas',
+    SUM(CASE WHEN G1.ID IN ('234', '215') AND (DR.FK_CLASSIFICACAO_CONTABIL_GRUPO_2 IS NULL OR DR.FK_CLASSIFICACAO_CONTABIL_GRUPO_2 <> {BRINDES_CONFRATERNIZACAO_INTERNA_G2}) THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C5 Despesas Operacionais com Freelas',
     SUM(CASE WHEN G1.ID IN ('233') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C6 Despesas com Clientes',
     SUM(CASE WHEN G1.ID IN ('217') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C7 Despesas com Softwares e Licenças',
     SUM(CASE WHEN G1.ID IN ('211', '224', '227') THEN DR.VALOR_PAGAMENTO ELSE 0 END) AS 'C8 Despesas com Marketing',
@@ -34,7 +38,8 @@ ORDER BY STR_TO_DATE(DATE_FORMAT(DR.COMPETENCIA, '%m/%Y'), '%m/%Y');
 def costs_blueme_details(day1, day2):
     return get_dataframe_from_query(f"""
 SELECT
-    CASE 
+    CASE
+        WHEN G2.ID = {BRINDES_CONFRATERNIZACAO_INTERNA_G2} THEN 'c3_Despesas_com_Pessoal_Interno'
         WHEN G1.ID IN ('216') THEN 'c1_Impostos'
         WHEN G1.ID IN ('220','221','222','225','232', '218', '226') THEN 'c2_Custos_de_Ocupacao'
         WHEN G1.ID IN ('223','231','253', '265') THEN 'c3_Despesas_com_Pessoal_Interno'
@@ -46,7 +51,7 @@ SELECT
         WHEN G1.ID IN ('213', '229', '228', '212', '214') THEN 'c9_Despesas_Financeiras'
         WHEN G1.ID IN ('219') THEN 'c10_Investimentos'
     END AS `CATEGORIA DE CUSTO`,
-    G1.DESCRICAO AS 'CLASSIFICAÇÃO PRIMÁRIA',
+    CASE WHEN G2.ID = {BRINDES_CONFRATERNIZACAO_INTERNA_G2} THEN G2.DESCRICAO ELSE G1.DESCRICAO END AS 'CLASSIFICAÇÃO PRIMÁRIA',
     SUM(DR.VALOR_PAGAMENTO) AS 'VALOR',
     DATE_FORMAT(DR.COMPETENCIA, '%Y/%m') AS 'DATA'
 FROM T_DESPESA_RAPIDA DR
@@ -58,7 +63,8 @@ AND DR.COMPETENCIA >= '2025-01-01'
 AND (DR.TAG_ESTORNO IS NULL OR DR.TAG_ESTORNO = 0)
 AND DR.COMPETENCIA >= '{day1}'
 AND DR.COMPETENCIA <= '{day2}'
-GROUP BY YEAR(DR.COMPETENCIA), MONTH(DR.COMPETENCIA), `CATEGORIA DE CUSTO`, G1.DESCRICAO
+GROUP BY YEAR(DR.COMPETENCIA), MONTH(DR.COMPETENCIA), `CATEGORIA DE CUSTO`,
+    CASE WHEN G2.ID = {BRINDES_CONFRATERNIZACAO_INTERNA_G2} THEN G2.DESCRICAO ELSE G1.DESCRICAO END
 ORDER BY `CATEGORIA DE CUSTO`
 """, use_blueme=True)
 
@@ -85,7 +91,8 @@ def ratings_rank_details_blueme(data):
     return get_dataframe_from_query(f"""
 SELECT 
 		DR.ID AS 'ID CUSTO',
-    CASE 
+    CASE
+        WHEN G2.ID = {BRINDES_CONFRATERNIZACAO_INTERNA_G2} THEN 'c3_Despesas_com_Pessoal_Interno'
         WHEN G1.ID IN ('216') THEN 'c1_Impostos'
         WHEN G1.ID IN ('220','221','222','225','232', '218', '226') THEN 'c2_Custos_de_Ocupacao'
         WHEN G1.ID IN ('223','231','253') THEN 'c3_Despesas_com_Pessoal_Interno'
